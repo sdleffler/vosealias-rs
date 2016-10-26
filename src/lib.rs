@@ -49,6 +49,7 @@ impl<T, F> fmt::Debug for AliasTable<T, F>
 impl<T, F> AliasTable<T, F>
     where F: PartialOrd + SampleRange
 {
+    /// Pick a random element from the distribution. Samples from the RNG using `ind_sample` only.
     pub fn pick<'a, R: Rng>(&'a self, rng: &mut R) -> &'a T {
         let idx = self.range.ind_sample(rng);
         let ref entry = self.table[idx];
@@ -68,6 +69,8 @@ impl<T, F> AliasTable<T, F>
 impl<'a, T, F: 'a> FromIterator<(T, F)> for AliasTable<T, F>
     where F: Float + NumCast + One + SampleRange + Sum<F> + Zero
 {
+    /// Construct an alias table from an iterator. Expects a tuple, where the left-hand element is
+    /// the distribution's value, and the right-hand element is the value's weight in the distribution.
     fn from_iter<I: IntoIterator<Item = (T, F)>>(iter: I) -> Self {
         let (objs, ps): (Vec<_>, Vec<_>) = iter.into_iter().unzip();
         let psum: F = ps.iter().cloned().sum();
