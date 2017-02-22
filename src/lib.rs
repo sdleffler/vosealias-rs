@@ -53,15 +53,15 @@ impl<T, F> AliasTable<T, F>
     pub fn pick<'a, R: Rng>(&'a self, rng: &mut R) -> &'a T {
         let idx = self.range.ind_sample(rng);
         let ref entry = self.table[idx];
-        match entry {
-            &Aliased { ref threshold, value, alias } => {
+        match *entry {
+            Aliased { ref threshold, value, alias } => {
                 if &self.float.ind_sample(rng) < threshold {
                     &self.objs[value]
                 } else {
                     &self.objs[alias]
                 }
             }
-            &Unaliased(idx) => &self.objs[idx],
+            Unaliased(idx) => &self.objs[idx],
         }
     }
 }
