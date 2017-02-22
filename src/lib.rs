@@ -52,7 +52,7 @@ impl<T, F> AliasTable<T, F>
     /// Pick a random element from the distribution. Samples from the RNG using `ind_sample` only.
     pub fn pick<'a, R: Rng>(&'a self, rng: &mut R) -> &'a T {
         let idx = self.range.ind_sample(rng);
-        let ref entry = self.table[idx];
+        let entry = &self.table[idx];
         match *entry {
             Aliased { ref threshold, value, alias } => {
                 if &self.float.ind_sample(rng) < threshold {
