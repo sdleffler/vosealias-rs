@@ -1,14 +1,14 @@
 //! # Walker-Vose Alias Method
 //! A simple implementation of alias tables using the Walker-Vose method.
 
-extern crate num;
+extern crate num_traits;
 extern crate rand;
 
 use std::fmt;
 use std::iter::{FromIterator, Sum};
 use std::vec::Vec;
 
-use num::{Float, NumCast, One, Zero};
+use num_traits::{Float, NumCast, One, Zero};
 
 use rand::Rng;
 use rand::distributions::range::{Range, SampleRange};
