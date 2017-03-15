@@ -1,14 +1,14 @@
 //! # Walker-Vose Alias Method
 //! A simple implementation of alias tables using the Walker-Vose method.
 
-extern crate num;
+extern crate num_traits;
 extern crate rand;
 
 use std::fmt;
 use std::iter::{FromIterator, Sum};
 use std::vec::Vec;
 
-use num::{Float, NumCast, One, Zero};
+use num_traits::{Float, NumCast, One, Zero};
 
 use rand::Rng;
 use rand::distributions::range::{Range, SampleRange};
@@ -36,6 +36,15 @@ pub struct AliasTable<T, F> {
     float: Range<F>,
 }
 
+/// An iterator for an alias table.
+#[derive(Clone)]
+pub struct AliasTableIterator<'a, T: 'a, F: 'a, R>
+    where R: Rng + Sized
+{
+    rng: R,
+    table: &'a AliasTable<T, F>
+}
+
 
 impl<T, F> fmt::Debug for AliasTable<T, F>
     where F: fmt::Debug
@@ -52,16 +61,25 @@ impl<T, F> AliasTable<T, F>
     /// Pick a random element from the distribution. Samples from the RNG using `ind_sample` only.
     pub fn pick<'a, R: Rng>(&'a self, rng: &mut R) -> &'a T {
         let idx = self.range.ind_sample(rng);
-        let ref entry = self.table[idx];
-        match entry {
-            &Aliased { ref threshold, value, alias } => {
+        let entry = &self.table[idx];
+        match *entry {
+            Aliased { ref threshold, value, alias } => {
                 if &self.float.ind_sample(rng) < threshold {
                     &self.objs[value]
                 } else {
                     &self.objs[alias]
                 }
             }
-            &Unaliased(idx) => &self.objs[idx],
+            Unaliased(idx) => &self.objs[idx],
+        }
+    }
+
+    /// Given an RNG, produce an iterator that picks random element from the distribution by
+    /// calling `pick` repeatedly with the given RNG.
+    pub fn iter<R: Rng>(&self, rng: R) -> AliasTableIterator<T, F, R> {
+        AliasTableIterator {
+            rng: rng,
+            table: self
         }
     }
 }
@@ -83,6 +101,7 @@ impl<'a, T, F: 'a> FromIterator<(T, F)> for AliasTable<T, F>
             ps.into_iter().map(|p| pcoeff * p).enumerate().partition(|&(_, p)| p < F::one());
         let mut table = Vec::new();
 
+
         while !(small.is_empty() || large.is_empty()) {
             let (l, p_l) = small.pop().unwrap();
             let (g, p_g) = large.pop().unwrap();
@@ -103,13 +122,9 @@ impl<'a, T, F: 'a> FromIterator<(T, F)> for AliasTable<T, F>
                 .push((g, p_g));
         }
 
-        while let Some((g, _)) = large.pop() {
-            table.push(Unaliased(g));
-        }
+        table.extend(large.iter().map(|&(g, _)| Unaliased(g)));
 
-        while let Some((l, _)) = small.pop() {
-            table.push(Unaliased(l));
-        }
+        table.extend(small.iter().map(|&(l, _)| Unaliased(l)));
 
         AliasTable {
             range: Range::new(0, table.len()),
@@ -117,5 +132,33 @@ impl<'a, T, F: 'a> FromIterator<(T, F)> for AliasTable<T, F>
             table: table,
             objs: objs,
         }
+    }
+}
+
+impl<'a, T: 'a, F, R> Iterator for AliasTableIterator<'a, T, F, R>
+    where F: PartialOrd + SampleRange,
+          R: Rng
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(self.table.pick(&mut self.rng))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (std::usize::MAX, None)
+    }
+}
+
+impl<'a, T, F> IntoIterator for &'a AliasTable<T, F>
+    where F: Sized + PartialOrd + SampleRange
+{
+    type Item = &'a T;
+    type IntoIter = AliasTableIterator<'a, T, F, rand::ThreadRng>;
+
+    /// Produces an iterator that picks random element from the distribution by calling
+    /// calling `pick` repeatedly with the thread's RNG.
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter(rand::thread_rng())
     }
 }
