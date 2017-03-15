@@ -143,6 +143,10 @@ impl<'a, T: 'a, F, R> Iterator for AliasTableIterator<'a, T, F, R>
     fn next(&mut self) -> Option<Self::Item> {
         Some(self.table.pick(&mut self.rng))
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (std::usize::MAX, None)
+    }
 }
 
 impl<'a, T, F> IntoIterator for &'a AliasTable<T, F>
