@@ -37,6 +37,7 @@ pub struct AliasTable<T, F> {
 }
 
 /// An iterator for an alias table.
+#[derive(Clone)]
 pub struct AliasTableIterator<'a, T: 'a, F: 'a, R>
     where R: Rng + Sized
 {
