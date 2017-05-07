@@ -2,6 +2,14 @@
 name = "vosealias"
 version = "0.2.0"
 authors = ["Sean Leffler <sean@errno.com>"]
+description = "A small implementation of the Walker-Vose alias table algorithm."
+documentation = "https://docs.rs/vosealias"
+homepage = "https://github.com/sdleffler/vosealias-rs"
+repository = "https://github.com/sdleffler/vosealias-rs"
+readme = "README.md"
+keywords = ["random", "alias", "table", "choice"]
+categories = ["algorithms", "data-structures"]
+license = "MIT"
 
 [dependencies]
 num-traits = "0.1.36"
